@@ -3,7 +3,8 @@ monthAndYear = document.getElementById("monthAndYear");
 checkLabel = document.getElementById("checkLabel");
 const sun = "sun_max_fill.jpg";
 const moon = "moon_stars_fill.jpg";
-
+const vacay = "Gift Fill.jpg";
+var vacation = [new Date(2023, 7, 1)];
 
 const date1 = new Date();
 
@@ -15,12 +16,8 @@ dayCheck = document.getElementById("checkDay");
 monthCheck = document.getElementById("checkMonth");
 yearCheck = document.getElementById("checkYear");
 
-
-
 // This arrangement can be altered based on how we want the date's format to appear.
 const currentDate1 = month1 + "/" + day1 + "/" + year1;
-
-//Alex End
 //Print to page title
 monthAndYear.innerHTML = "Currently: " + shiftFirstOutput(currentDate1);
 
@@ -32,9 +29,12 @@ function getShift(checkDate)
     const checkDate1 = new Date(checkDate);
     const diffTime = Math.abs(checkDate1 - referenceDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
     //Mod difference in days by 12 to calculate current day in cycle
     const dayInCycle = (diffDays + 1)%12;
+    if(checkAgainstVacation(checkDate1))
+    {
+        return -1;
+    }
     if(dayInCycle >= 0 && dayInCycle < 12)
     {
         return dayInCycle;
@@ -55,6 +55,10 @@ function shiftFirstOutput(checkDate)
 {
     switch(getShift(checkDate))
     {
+        case -1:
+            document.getElementById("flashImage").src = vacay;
+            return "Vacation";
+            break;
         case 1:
             return "1st Day Off";
             break;
@@ -103,6 +107,10 @@ function shiftSecondOutput(checkDate)
 {
     switch(getShift(checkDate))
     {
+        case -1:
+            document.getElementById("flashImage").src = vacay;
+            return "Vacation";
+            break;
         case 1:
             return "1st Day Off";
             break;
@@ -145,6 +153,21 @@ function shiftSecondOutput(checkDate)
             document.getElementById("flashImage").src = sun;
             return "3rd Day Working";
             break;
+    }
+}
+function addVacation(newDate)
+{
+    vacation.push(newDate);
+}
+function checkAgainstVacation(checkDate)
+{
+    for(let i = 0; i < vacation.length; i++)
+    {
+        if(vacation[i].valueOf() === checkDate.valueOf())
+        {
+            return true;
+        }
+        return false;
     }
 }
 function daysInMonth(iMonth, iYear) {
