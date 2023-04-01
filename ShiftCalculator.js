@@ -1,9 +1,9 @@
 
 monthAndYear = document.getElementById("monthAndYear");
 checkLabel = document.getElementById("checkLabel");
-const sun = "sun_max_fill.jpg";
-const moon = "moon_stars_fill.jpg";
-const vacay = "Gift Fill.jpg";
+const sun = "sun_max_fill.png";
+const moon = "moon_stars_fill.png";
+const vacay = "Gift Fill.png";
 var vacation = [new Date(2023, 7, 1)];
 
 const date1 = new Date();
