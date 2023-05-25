@@ -64,12 +64,7 @@
   font-family: myFont;
   font-size: 30px;
 }
-.center2{
-margin-top: 1%;
-margin-left: 5%;
 
-width: 90%;
-}
 .searchBar{
  transform: translateX(200%);
 }
@@ -92,10 +87,17 @@ header{
 }
 header nav {
   background-color: rgba(255, 228, 196, 0.288);
-  width: 1400px;
+  width: auto;
   margin: 0 auto;
   padding: 0 2rem;
   display: flex;
   justify-content:space-around;
   align-items: center;
+}
+@media(min-width: 360px){
+  body{
+    background-image: url('ConcertMobile.png');
+    background-size:cover;
+    background-repeat: no-repeat;
+  }
 }
