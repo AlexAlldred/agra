@@ -1,101 +1,13 @@
-@font-face {
-  font-family: myFont;
-  src: url(PRISTINA.TTF);
-}
-*, *::before,*::after{
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
-}
+
 .center1{
-  position: relative;
-    display: flex;
-    transform: translate(0%, 50%);
+    display: block;
   margin-left: auto;
   margin-right: auto;
-  
   width: 15%;
 }
-.phone-inlay{
-  position: absolute;
-  top: 48%;
-  left: 23%;
-  color: 2A324B;
-  font-family: myFont;
-  font-size: 26px;
-}
-.phone-inlay0{
-  position: absolute;
-  top: 35%;
-  left: 39%;
-  color: 2A324B;
-  font-family: myFont;
-  font-size: 30px;
-}
-.phone-inlay2{
-  position: absolute;
-  top: 77%;
-  left: 23%;
-  color: 2A324B;
-  font-family: myFont;
-  font-size: 26px;
-}
-.phone-inlay20{
-  position: absolute;
-  top: 66%;
-  left: 35%;
-  color: 2A324B;
-  font-family: myFont;
-  font-size: 30px;
-}
-.phone-inlay3{
-  position: absolute;
-  top: 18%;
-  left: 27%;
-  color: 191E2D;
-  font-family: myFont;
-  font-size: 26px;
-}
-.phone-inlay30{
-  position: absolute;
-  top: 10%;
-  left: 35%;
-  color: 191E2D;
-  font-family: myFont;
-  font-size: 30px;
-}
 .center2{
-margin-top: 1%;
-margin-left: 5%;
-
-width: 90%;
-}
-.searchBar{
- transform: translateX(200%);
-}
-.searchBar1{
-  transform: translateX(200%);
- }
- .searchBar2{
-  transform: translateX(200%);
- }
- .searchBar3{
-  transform: translateX(-65%);
- }
- .searchBar4{
-  transform: translateX(-300%);
- }
-header{
-  position: absolute;
-  width: 100%;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-header nav {
-  background-color: rgba(255, 228, 196, 0.288);
-  width: 1400px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  justify-content:space-around;
-  align-items: center;
+  display: block;
+margin-left: 25%;
+margin-right: auto;
+width: 80%;
 }
