@@ -1,80 +1,863 @@
-<html>
-  
-    
-  
-    <style>
-        h3 {text-align: center;}
-        body{
-          background-image: url('Lake.jpg');
-        }
-    </style>
-    <div>
-            <h3 id="monthAndYear"></h3>
-            <img src="sun_max_fill.png" class="center1" id="flashImage">
-
-            
-    </div>  
-    <div class="center2">
-        <label for="checkMonth">Check a certain date</label>
-        <select id="checkMonth">
-            <option value="1">January</option>
-            <option value="2">February</option>
-            <option value="3">March</option>
-            <option value="4">April</option>
-            <option value="5">May</option>
-            <option value="6">June</option>
-            <option value="7">July</option>
-            <option value="8">August</option>
-            <option value="9">September</option>
-            <option value="10">October</option>
-            <option value="11">November</option>
-            <option value="12">December</option>
-          </select>
-        <select id="checkDay">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-            <option value="9">9</option>
-            <option value="10">10</option>
-            <option value="11">11</option>
-            <option value="12">12</option>
-            <option value="13">13</option>
-            <option value="14">14</option>
-            <option value="15">15</option>
-            <option value="16">16</option>
-            <option value="17">17</option>
-            <option value="18">18</option>
-            <option value="19">19</option>
-            <option value="20">20</option>
-            <option value="21">21</option>
-            <option value="22">22</option>
-            <option value="23">23</option>
-            <option value="24">24</option>
-            <option value="25">25</option>
-            <option value="26">26</option>
-            <option value="27">27</option>
-            <option value="28">28</option>
-            <option value="29">29</option>
-            <option value="30">30</option>
-          </select>
-        <select id="checkYear">
-            <option value="2023">2023</option>
-            <option value="2024">2024</option>
-            <option value="2025">2025</option>
-          </select>
-        <button onclick="checkDate()">Check</button>
-        <h3 id="checkLabel"></h3>
-    </div>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    
-    <script src="ShiftCalculator.js"></script>
-    
-    <link rel="stylesheet" type="text/css" href="ShiftCalculator.css">
-    
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alex's Shift Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── TOKENS ────────────────────────────────────────── */
+    :root {
+      --bg:        #0b0e14;
+      --surface:   #131720;
+      --border:    #1e2535;
+      --muted:     #3a4258;
+      --text:      #e8ecf4;
+      --subtle:    #8892a8;
+
+      /* shift states */
+      --day-a:    #f97316;
+      --day-b:    #fb923c;
+      --night-a:  #818cf8;
+      --night-b:  #a5b4fc;
+      --off-a:    #34d399;
+      --off-b:    #6ee7b7;
+      --vac-a:    #f472b6;
+      --vac-b:    #f9a8d4;
+
+      --accent:   var(--day-a);
+      --glow:     var(--day-a);
+
+      --radius:   16px;
+      --mono:     'DM Mono', monospace;
+      --display:  'Syne', sans-serif;
+    }
+
+    /* ── RESET ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--display);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 2rem 1rem 4rem;
+      overflow-x: hidden;
+    }
+
+    /* subtle noise overlay */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── LAYOUT ────────────────────────────────────────── */
+    .wrapper {
+      width: 100%; max-width: 540px;
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; gap: 1.5rem;
+    }
+
+    /* ── HEADER ────────────────────────────────────────── */
+    header {
+      text-align: center;
+      padding-top: 1rem;
+    }
+    header .eyebrow {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--subtle);
+      margin-bottom: 0.4rem;
+    }
+    header h1 {
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    /* ── TODAY CARD ─────────────────────────────────────── */
+    .today-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem 1.75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.4s;
+    }
+    .today-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius);
+      background: radial-gradient(ellipse at 50% -20%, var(--glow) 0%, transparent 65%);
+      opacity: 0.07;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+
+    .shift-icon {
+      font-size: 3.5rem;
+      line-height: 1;
+      animation: floatIcon 4s ease-in-out infinite;
+      filter: drop-shadow(0 0 18px var(--glow));
+      transition: filter 0.4s;
+    }
+    @keyframes floatIcon {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-6px); }
+    }
+
+    .reset-hint {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--subtle);
+      cursor: pointer;
+      padding: 0.15rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      transition: color 0.2s, border-color 0.2s;
+      margin-bottom: -0.25rem;
+    }
+    .reset-hint:hover { color: var(--text); border-color: var(--muted); }
+
+    .today-label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--subtle);
+    }
+    .today-status {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--accent);
+      text-align: center;
+      transition: color 0.4s;
+    }
+    .today-date {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--subtle);
+    }
+
+    /* cycle progress bar */
+    .cycle-bar-wrap {
+      width: 100%;
+    }
+    .cycle-bar-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--subtle);
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .cycle-segments {
+      display: flex;
+      gap: 3px;
+      width: 100%;
+    }
+    .seg {
+      flex: 1;
+      height: 6px;
+      border-radius: 99px;
+      background: var(--border);
+      transition: background 0.4s;
+    }
+    .seg.day-work  { background: var(--day-a); }
+    .seg.day-off   { background: var(--off-a); }
+    .seg.night-work { background: var(--night-a); }
+    .seg.night-off { background: var(--off-b); }
+    .seg.active    { box-shadow: 0 0 8px var(--glow); }
+
+    /* ── CHECKER CARD ───────────────────────────────────── */
+    .checker-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .checker-card h2 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--subtle);
+      text-transform: uppercase;
+    }
+
+    .date-inputs {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1.3fr;
+      gap: 0.6rem;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .input-group label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    select {
+      appearance: none;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+    }
+    select:hover { border-color: var(--muted); }
+
+    .check-btn {
+      background: var(--accent);
+      color: #000;
+      font-family: var(--display);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+    }
+    .check-btn:hover  { opacity: 0.88; transform: translateY(-1px); }
+    .check-btn:active { transform: translateY(0); opacity: 1; }
+
+    /* result row */
+
+
+    /* ── LEGEND ─────────────────────────────────────────── */
+    .legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--subtle);
+    }
+    .legend-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── FOOTER ─────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── EXPAND TOGGLE ──────────────────────────────────── */
+    .expand-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--subtle);
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+      margin-top: 0.25rem;
+    }
+    .expand-btn:hover { color: var(--text); }
+    .expand-arrow {
+      display: inline-block;
+      transition: transform 0.35s ease;
+      font-style: normal;
+    }
+    .expand-btn.open .expand-arrow { transform: rotate(180deg); }
+
+    /* ── MONTH CALENDAR PANEL ───────────────────────────── */
+    .month-panel {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.4s ease, opacity 0.3s ease;
+      opacity: 0;
+      width: 100%;
+    }
+    .month-panel.open {
+      max-height: 400px;
+      opacity: 1;
+    }
+    .month-panel-inner {
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: 0.5rem;
+    }
+    .month-header {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--subtle);
+      margin-bottom: 0.6rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+    .dow-label {
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      color: var(--muted);
+      padding-bottom: 4px;
+      letter-spacing: 0.06em;
+    }
+    .day-cell {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--subtle);
+      background: transparent;
+      position: relative;
+    }
+    .day-cell.empty { background: transparent; }
+    .day-cell.day-work  { background: color-mix(in srgb, var(--day-a) 22%, transparent);   color: var(--day-b); }
+    .day-cell.night-work { background: color-mix(in srgb, var(--night-a) 22%, transparent); color: var(--night-b); }
+    .day-cell.day-off   { background: color-mix(in srgb, var(--off-a) 15%, transparent);   color: var(--off-b); }
+    .day-cell.night-off { background: color-mix(in srgb, var(--off-b) 15%, transparent);   color: var(--off-a); }
+    .day-cell.vacation  { background: color-mix(in srgb, var(--vac-a) 20%, transparent);   color: var(--vac-b); }
+    .day-cell.today-cell {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    /* ── VOICE BUTTON ───────────────────────────────────── */
+    .voice-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+    .check-btn { flex: 1; }
+    .voice-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--subtle);
+      cursor: pointer;
+      padding: 0 1rem;
+      font-size: 1.2rem;
+      transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .voice-btn:hover { background: var(--bg); color: var(--text); border-color: var(--muted); }
+    .voice-btn.listening {
+      background: color-mix(in srgb, var(--vac-a) 18%, transparent);
+      border-color: var(--vac-a);
+      color: var(--vac-a);
+      box-shadow: 0 0 14px color-mix(in srgb, var(--vac-a) 30%, transparent);
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.6; }
+    }
+    .voice-status {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--subtle);
+      min-height: 1rem;
+      text-align: center;
+      letter-spacing: 0.08em;
+      transition: color 0.2s;
+    }
+    .voice-status.active { color: var(--vac-a); }
+
+
+    /* ── CREW SELECTOR ──────────────────────────────────── */
+    .crew-selector {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 0.6rem 0 0.25rem;
+    }
+    .crew-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--subtle);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      padding: 0.35rem 0.85rem;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .crew-btn:hover { border-color: var(--muted); color: var(--text); }
+    .crew-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      font-weight: 600;
+    }
+
+    /* ── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 400px) {
+      .date-inputs { grid-template-columns: 1fr 1fr; }
+      .date-inputs .input-group:last-child { grid-column: span 2; }
+    }
+  </style>
 </head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <p class="eyebrow">Shift Tracker</p>
+    <div class="crew-selector">
+      <button class="crew-btn active" data-crew="B" onclick="setCrew('B')">B Crew</button>
+      <button class="crew-btn" data-crew="A" onclick="setCrew('A')">A Crew</button>
+      <button class="crew-btn" data-crew="C" onclick="setCrew('C')">C Crew</button>
+      <button class="crew-btn" data-crew="D" onclick="setCrew('D')">D Crew</button>
+    </div>
+    <h1 id="mainTitle">B Crew</h1>
+  </header>
+
+  <!-- TODAY CARD -->
+  <div class="today-card" id="todayCard">
+    <p class="today-label" id="todayLabel">Today</p>
+    <div class="reset-hint" id="resetHint" onclick="resetToToday()" style="display:none">
+      ← Back to today
+    </div>
+    <div class="shift-icon" id="todayIcon">☀️</div>
+    <div class="today-status" id="todayStatus">Loading…</div>
+    <div class="today-date" id="todayDate"></div>
+
+    <div class="cycle-bar-wrap">
+      <div class="cycle-bar-label">
+        <span>12-day cycle</span>
+        <span id="cyclePos"></span>
+      </div>
+      <div class="cycle-segments" id="cycleSegments"></div>
+    </div>
+
+    <!-- EXPAND TOGGLE -->
+    <button class="expand-btn" id="expandBtn" onclick="toggleMonth()">
+      <em class="expand-arrow" id="expandArrow">▼</em>
+      <span id="expandLabel">Show month</span>
+    </button>
+
+    <!-- MONTH CALENDAR PANEL -->
+    <div class="month-panel" id="monthPanel">
+      <div class="month-panel-inner">
+        <div class="month-header">
+          <span id="monthPanelTitle"></span>
+          <span id="monthPanelSub"></span>
+        </div>
+        <div class="month-grid" id="monthGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATE CHECKER -->
+  <div class="checker-card">
+    <h2>Check a date</h2>
+    <div class="date-inputs">
+      <div class="input-group">
+        <label for="checkMonth">Month</label>
+        <select id="checkMonth"></select>
+      </div>
+      <div class="input-group">
+        <label for="checkDay">Day</label>
+        <select id="checkDay"></select>
+      </div>
+      <div class="input-group">
+        <label for="checkYear">Year</label>
+        <select id="checkYear"></select>
+      </div>
+    </div>
+    <div class="voice-row">
+      <button class="check-btn" onclick="checkDate()">Check Shift →</button>
+      <button class="voice-btn" id="voiceBtn" onclick="startVoice()" title="Speak a date">🎤</button>
+    </div>
+    <div class="voice-status" id="voiceStatus"></div>
+
+  </div>
+
+  <!-- LEGEND -->
+  <div class="checker-card">
+    <h2>Cycle legend</h2>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--day-a)"></div> Days 1–3: Day shifts</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--off-a)"></div> Days 4–6: Days off</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--night-a)"></div> Days 7–9: Night shifts</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--off-b)"></div> Days 10–12: Days off</div>
+    </div>
+  </div>
+
+  <footer>cycle anchored to 1 Mar 2023 · 12-day rotation</footer>
+
+</div>
+
+<script>
+  // ── CREW CONFIGURATION ───────────────────────────────────────────────────
+  // All crews share the same 12-day cycle, offset from each other.
+  // Verified against Mar 26 2026:
+  //   B = Day Shift 3 of 3 (index 2)
+  //   C = Night Shift 3 of 3 (index 8) → offset +6
+  //   A = Mar 27: Night Shift 1 of 3 (index 6) → offset +3
+  //   D = Mar 27: Day Shift 1 of 3 (index 0)   → offset +9
+  const CREW_OFFSETS = { B: 0, C: 6, A: 3, D: 9 };
+  let activeCrew = 'B';
+
+  // ── SHIFT LOGIC ──────────────────────────────────────────────────────────
+  const vacationDates = [
+    new Date(2023, 7, 1),
+  ];
+
+  // Jan 3 2023 anchor — verified all 4 crews against Mar 26 & 27 2026:
+  const REFERENCE = new Date(2023, 0, 3);  // Jan 3 2023
+
+  function getCycleDay(date) {
+    // Use UTC noon to avoid DST / timezone boundary issues
+    const d   = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+    const ref = Date.UTC(REFERENCE.getFullYear(), REFERENCE.getMonth(), REFERENCE.getDate(), 12);
+
+    for (const v of vacationDates) {
+      const vd = Date.UTC(v.getFullYear(), v.getMonth(), v.getDate(), 12);
+      if (d === vd) return -1;
+    }
+
+    const diffDays = Math.round((d - ref) / 86400000);
+    return ((diffDays % 12) + 12) % 12;
+  }
+
+  function getCycleDayForCrew(date, crew) {
+    const base = getCycleDay(date);
+    if (base === -1) return -1;
+    return ((base + CREW_OFFSETS[crew]) % 12);
+  }
+
+  function shiftInfo(date, crew) {
+    crew = crew || activeCrew;
+    const c = getCycleDayForCrew(date, crew);
+    if (c === -1) return { label: 'Vacation',                 icon: '🌴', colorVar: '--vac-a',   segClass: 'vacation'   };
+    if (c <= 2)   return { label: `Day Shift (${c+1} of 3)`,   icon: '☀️', colorVar: '--day-a',   segClass: 'day-work'   };
+    if (c <= 5)   return { label: `Day Off (${c-2} of 3)`,     icon: '😴', colorVar: '--off-a',   segClass: 'day-off'    };
+    if (c <= 8)   return { label: `Night Shift (${c-5} of 3)`, icon: '🌙', colorVar: '--night-a', segClass: 'night-work' };
+    return               { label: `Night Off (${c-8} of 3)`,   icon: '😴', colorVar: '--off-b',   segClass: 'night-off'  };
+  }
+
+  // ── CREW SWITCHER ─────────────────────────────────────────────────────────
+  function setCrew(crew) {
+    activeCrew = crew;
+    document.getElementById('mainTitle').textContent = crew + ' Crew';
+    document.querySelectorAll('.crew-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.crew === crew);
+      btn.style.background  = '';
+      btn.style.borderColor = '';
+    });
+    renderToday();
+    if (monthPanelOpen) buildMonthCalendar(new Date());
+  }
+
+  // ── THEME ─────────────────────────────────────────────────────────────────
+  function applyTheme(info) {
+    document.documentElement.style.setProperty('--accent', `var(${info.colorVar})`);
+    document.documentElement.style.setProperty('--glow',   `var(${info.colorVar})`);
+  }
+
+  // ── CYCLE PROGRESS BAR ───────────────────────────────────────────────────
+  function buildCycleBar(currentCycleDay) {
+    const segClasses = [
+      'day-work','day-work','day-work',
+      'day-off','day-off','day-off',
+      'night-work','night-work','night-work',
+      'night-off','night-off','night-off',
+    ];
+    const container = document.getElementById('cycleSegments');
+    container.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+      const seg = document.createElement('div');
+      seg.className = 'seg ' + segClasses[i] + (i === currentCycleDay ? ' active' : '');
+      container.appendChild(seg);
+    }
+    document.getElementById('cyclePos').textContent =
+      currentCycleDay === -1 ? 'vacation' : `day ${currentCycleDay + 1} / 12`;
+  }
+
+  // ── MONTH CALENDAR ────────────────────────────────────────────────────────
+  let monthPanelOpen = false;
+
+  function toggleMonth() {
+    monthPanelOpen = !monthPanelOpen;
+    const panel = document.getElementById('monthPanel');
+    const btn   = document.getElementById('expandBtn');
+    const label = document.getElementById('expandLabel');
+    panel.classList.toggle('open', monthPanelOpen);
+    btn.classList.toggle('open',   monthPanelOpen);
+    label.textContent = monthPanelOpen ? 'Hide month' : 'Show month';
+    if (monthPanelOpen) buildMonthCalendar(new Date());
+  }
+
+  function buildMonthCalendar(refDate) {
+    const today       = new Date();
+    const year        = refDate.getFullYear();
+    const month       = refDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDow    = new Date(year, month, 1).getDay();
+    const monthNames  = ['January','February','March','April','May','June',
+                         'July','August','September','October','November','December'];
+
+    document.getElementById('monthPanelTitle').textContent = monthNames[month] + ' ' + year;
+
+    const grid = document.getElementById('monthGrid');
+    grid.innerHTML = '';
+
+    ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+      const lbl = document.createElement('div');
+      lbl.className = 'dow-label'; lbl.textContent = d;
+      grid.appendChild(lbl);
+    });
+
+    for (let i = 0; i < firstDow; i++) {
+      const blank = document.createElement('div');
+      blank.className = 'day-cell empty';
+      grid.appendChild(blank);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cellDate = new Date(year, month, d);
+      const info     = shiftInfo(cellDate, activeCrew);
+      const isToday  = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+      const cell     = document.createElement('div');
+      cell.className = 'day-cell ' + info.segClass + (isToday ? ' today-cell' : '');
+      cell.textContent = d;
+      cell.title = activeCrew + ' Crew: ' + info.label;
+      grid.appendChild(cell);
+    }
+  }
+
+  // ── TODAY ────────────────────────────────────────────────────────────────
+  function renderToday() {
+    // If user was viewing a checked date, re-apply it for the new crew; else show real today
+    const date = viewingDate || new Date();
+    updateTodayCard(date);
+  }
+
+  // ── POPULATE SELECTS ─────────────────────────────────────────────────────
+  function populateSelects() {
+    const months = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    const mSel = document.getElementById('checkMonth');
+    months.forEach((m, i) => {
+      const o = document.createElement('option');
+      o.value = i + 1; o.textContent = m; mSel.appendChild(o);
+    });
+    const dSel = document.getElementById('checkDay');
+    for (let d = 1; d <= 31; d++) {
+      const o = document.createElement('option'); o.value = d; o.textContent = d;
+      dSel.appendChild(o);
+    }
+    const now  = new Date();
+    const ySel = document.getElementById('checkYear');
+    for (let y = 2023; y <= now.getFullYear() + 3; y++) {
+      const o = document.createElement('option');
+      o.value = y; o.textContent = y;
+      if (y === now.getFullYear()) o.selected = true;
+      ySel.appendChild(o);
+    }
+    mSel.value = now.getMonth() + 1;
+    dSel.value = now.getDate();
+  }
+
+  // ── DATE CHECKER ─────────────────────────────────────────────────────────
+  // Updates the today card to show the checked date instead of today.
+  // A subtle "viewing" banner appears; clicking it resets back to today.
+  let viewingDate = null;
+
+  function checkDate() {
+    const m    = parseInt(document.getElementById('checkMonth').value);
+    const d    = parseInt(document.getElementById('checkDay').value);
+    const y    = parseInt(document.getElementById('checkYear').value);
+    const date = new Date(y, m - 1, d);
+
+    if (date.getMonth() !== m - 1) {
+      // Invalid date — flash the today card label briefly
+      const lbl = document.getElementById('todayLabel');
+      lbl.textContent = '⚠️ Invalid date';
+      setTimeout(() => { lbl.textContent = viewingDate ? 'Viewing' : 'Today'; }, 2000);
+      return;
+    }
+
+    viewingDate = date;
+    updateTodayCard(date);
+  }
+
+  function resetToToday() {
+    viewingDate = null;
+    renderToday();
+  }
+
+  function updateTodayCard(date) {
+    const today   = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    const info    = shiftInfo(date, activeCrew);
+    const cyc     = getCycleDayForCrew(date, activeCrew);
+
+    document.getElementById('todayLabel').textContent  = isToday ? 'Today' : 'Viewing';
+    document.getElementById('todayIcon').textContent   = info.icon;
+    document.getElementById('todayStatus').textContent = info.label;
+    document.getElementById('todayDate').textContent   =
+      date.toLocaleDateString('en-CA', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    // Show/hide reset hint
+    const hint = document.getElementById('resetHint');
+    hint.style.display = isToday ? 'none' : 'block';
+
+    applyTheme(info);
+    buildCycleBar(cyc);
+  }
+
+  // ── VOICE INPUT ───────────────────────────────────────────────────────────
+  let recognition = null;
+
+  function startVoice() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceStatus('Voice not supported in this browser', false);
+      return;
+    }
+    if (recognition) { recognition.abort(); recognition = null; }
+    recognition = new SpeechRecognition();
+    recognition.lang = 'en-CA';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 3;
+
+    const btn = document.getElementById('voiceBtn');
+    btn.classList.add('listening');
+    setVoiceStatus('Listening… say a date like "March 15 2027"', true);
+
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript.trim();
+      setVoiceStatus('Heard: "' + transcript + '"', false);
+      btn.classList.remove('listening');
+      parseSpeechDate(transcript);
+    };
+    recognition.onerror = (e) => {
+      btn.classList.remove('listening');
+      const msgs = { 'no-speech': 'No speech detected', 'not-allowed': 'Microphone blocked', 'network': 'Network error' };
+      setVoiceStatus(msgs[e.error] || 'Error: ' + e.error, false);
+    };
+    recognition.onend = () => { btn.classList.remove('listening'); };
+    recognition.start();
+  }
+
+  function setVoiceStatus(msg, active) {
+    const el = document.getElementById('voiceStatus');
+    el.textContent = msg;
+    el.classList.toggle('active', active);
+  }
+
+  function parseSpeechDate(text) {
+    const clean = text.replace(/(\d+)(st|nd|rd|th)/gi, '$1');
+    let parsed = new Date(clean);
+    if (!isNaN(parsed)) {
+      setDropdowns(parsed.getMonth() + 1, parsed.getDate(), parsed.getFullYear());
+      checkDate(); return;
+    }
+    const monthNames = ['january','february','march','april','may','june',
+                        'july','august','september','october','november','december'];
+    const lower = clean.toLowerCase();
+    let foundMonth = -1, foundDay = -1, foundYear = new Date().getFullYear();
+    monthNames.forEach((m, i) => { if (lower.includes(m)) foundMonth = i + 1; });
+    const nums = lower.match(/\d+/g);
+    if (nums) {
+      nums.forEach(n => {
+        const num = parseInt(n);
+        if (num >= 2023 && num <= 2050) foundYear = num;
+        else if (num >= 1 && num <= 31 && foundDay === -1) foundDay = num;
+      });
+    }
+    if (foundMonth !== -1 && foundDay !== -1) {
+      setDropdowns(foundMonth, foundDay, foundYear); checkDate();
+    } else {
+      setVoiceStatus('Couldn\'t parse "' + text + '" — try "March 15 2027"', false);
+    }
+  }
+
+  function setDropdowns(month, day, year) {
+    document.getElementById('checkMonth').value = month;
+    document.getElementById('checkDay').value   = day;
+    const ySel = document.getElementById('checkYear');
+    if ([...ySel.options].some(o => parseInt(o.value) === year)) ySel.value = year;
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────────────────
+  populateSelects();
+  renderToday();
+</script>
+</body>
 </html>
