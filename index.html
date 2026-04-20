@@ -7,6 +7,31 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, setDoc, query, where, orderBy, Timestamp }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    // ── PASTE YOUR FIREBASE CONFIG HERE AFTER CREATING PROJECT ──────────────
+    // Instructions in README.md  ↓  replace these placeholder values
+   const firebaseConfig = {
+  apiKey: "AIzaSyCH1mmqlbR0qjOsmVfkTE97sMGQbgwiCkM",
+  authDomain: "shift-tracker-cb8b5.firebaseapp.com",
+  projectId: "shift-tracker-cb8b5",
+  storageBucket: "shift-tracker-cb8b5.firebasestorage.app",
+  messagingSenderId: "236760486594",
+  appId: "1:236760486594:web:27573400582432e202a15b"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // Expose DB helpers to global scope for the rest of the script
+    window._db = db;
+    window._fbModules = { collection, addDoc, getDocs, doc, deleteDoc, setDoc, query, where, orderBy, Timestamp };
+    window.dispatchEvent(new Event('firebase-ready'));
+  </script>
 
   <style>
     /* ── TOKENS ────────────────────────────────────────── */
@@ -639,6 +664,236 @@
       .date-inputs { grid-template-columns: 1fr 1fr; }
       .date-inputs .input-group:last-child { grid-column: span 2; }
     }
+
+    /* ── BELL BUTTON ────────────────────────────────────── */
+    .bell-btn {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem;
+      cursor: pointer;
+      color: var(--subtle);
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      z-index: 10;
+    }
+    .bell-btn:hover { border-color: var(--muted); color: var(--text); background: var(--bg); }
+    .bell-btn.has-event { border-color: var(--accent); color: var(--accent); }
+
+    /* ── MODAL BACKDROP ─────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem 1.5rem;
+      width: 100%; max-width: 400px;
+      display: flex; flex-direction: column; gap: 1.2rem;
+      transform: translateY(12px);
+      transition: transform 0.25s ease;
+      position: relative;
+    }
+    .modal-backdrop.open .modal { transform: translateY(0); }
+
+    .modal-title {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--subtle);
+    }
+    .modal-close {
+      position: absolute; top: 1rem; right: 1rem;
+      background: none; border: none;
+      color: var(--muted); font-size: 1.1rem;
+      cursor: pointer; line-height: 1;
+      transition: color 0.2s;
+    }
+    .modal-close:hover { color: var(--text); }
+
+    /* PIN input */
+    .pin-input {
+      display: flex; gap: 0.5rem; justify-content: center;
+    }
+    .pin-digit {
+      width: 48px; height: 56px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 1.4rem;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .pin-digit:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+    }
+    .pin-error {
+      font-family: var(--mono); font-size: 0.65rem;
+      color: #f87171; text-align: center; letter-spacing: 0.08em;
+      min-height: 1rem;
+    }
+
+    /* Submission form */
+    .form-label {
+      font-family: var(--mono); font-size: 0.62rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 0.35rem;
+      display: block;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); font-family: var(--mono); font-size: 0.85rem;
+      padding: 0.6rem 0.75rem; border-radius: 8px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+    }
+
+    /* Horizontal scroll selector */
+    .hscroll-wrap {
+      display: flex; gap: 0.4rem;
+      overflow-x: auto; padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .hscroll-wrap::-webkit-scrollbar { display: none; }
+    .hscroll-opt {
+      flex-shrink: 0;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--subtle); font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      padding: 0.3rem 0.75rem; border-radius: 99px;
+      cursor: pointer; white-space: nowrap;
+      transition: all 0.18s;
+    }
+    .hscroll-opt.selected {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+      color: var(--text);
+    }
+
+    .submit-btn {
+      background: var(--accent); color: #000;
+      font-family: var(--display); font-size: 0.9rem; font-weight: 700;
+      border: none; border-radius: 10px; padding: 0.7rem;
+      cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+    }
+    .submit-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .form-status {
+      font-family: var(--mono); font-size: 0.68rem;
+      text-align: center; letter-spacing: 0.08em;
+      color: var(--subtle); min-height: 1rem;
+    }
+    .form-status.ok  { color: var(--off-a); }
+    .form-status.err { color: #f87171; }
+
+    /* ── EVENT CARD THEMES ──────────────────────────────── */
+    .today-card.ev-party   { --ev1:#be185d; --ev2:#b45309; border-color: #be185d; }
+    .today-card.ev-concert { --ev1:#6d28d9; --ev2:#0891b2; border-color: #6d28d9; }
+    .today-card.ev-camping { --ev1:#166534; --ev2:#713f12; border-color: #166534; }
+    .today-card.ev-dinner  { --ev1:#991b1b; --ev2:#92400e; border-color: #991b1b; }
+    .today-card.ev-chill   { --ev1:#1e3a5f; --ev2:#4c1d95; border-color: #1e3a5f; }
+
+    .today-card[class*="ev-"]::after {
+      background: radial-gradient(ellipse at 50% -20%, var(--ev1) 0%, transparent 65%);
+      opacity: 0.18;
+    }
+    .event-name {
+      font-size: clamp(1.4rem, 4vw, 1.9rem);
+      font-weight: 800; letter-spacing: -0.02em;
+      text-align: center; line-height: 1.2;
+    }
+    .event-theme-badge {
+      font-family: var(--mono); font-size: 0.65rem;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 0.2rem 0.7rem;
+      border-radius: 99px; border: 1px solid currentColor;
+      opacity: 0.75;
+    }
+
+    /* ── ADMIN PANEL ────────────────────────────────────── */
+    #adminPanel {
+      display: none;
+      position: fixed; inset: 0;
+      background: #070a10;
+      z-index: 200;
+      overflow-y: auto;
+      padding: 2rem 1rem 4rem;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    #adminPanel.open { display: flex; }
+    .admin-header {
+      display: flex; justify-content: space-between; align-items: center;
+      width: 100%; max-width: 600px;
+    }
+    .admin-title {
+      font-family: var(--mono); font-size: 0.65rem;
+      letter-spacing: 0.2em; text-transform: uppercase; color: var(--subtle);
+    }
+    .admin-close {
+      background: none; border: 1px solid var(--border); color: var(--subtle);
+      font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em;
+      padding: 0.3rem 0.75rem; border-radius: 99px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .admin-close:hover { color: var(--text); border-color: var(--muted); }
+    .admin-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem 1.5rem;
+      width: 100%; max-width: 600px;
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .admin-card-date {
+      font-family: var(--mono); font-size: 0.62rem;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+    }
+    .admin-card-name {
+      font-size: 1.1rem; font-weight: 700; color: var(--text);
+    }
+    .admin-card-meta {
+      font-family: var(--mono); font-size: 0.7rem; color: var(--subtle);
+      display: flex; gap: 1rem; flex-wrap: wrap;
+    }
+    .admin-actions { display: flex; gap: 0.5rem; }
+    .admin-btn {
+      flex: 1; padding: 0.5rem; border: none; border-radius: 8px;
+      font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em;
+      cursor: pointer; font-weight: 600; transition: opacity 0.2s;
+    }
+    .admin-btn:hover { opacity: 0.8; }
+    .admin-btn.approve { background: var(--off-a); color: #000; }
+    .admin-btn.reject  { background: #3f1a1a; color: #f87171; border: 1px solid #f87171; }
+    .admin-empty {
+      font-family: var(--mono); font-size: 0.72rem;
+      color: var(--muted); text-align: center; padding: 2rem 0;
+      letter-spacing: 0.1em;
+    }
+    /* icon click counter — invisible */
+    #iconClickTrap { cursor: pointer; display: contents; }
   </style>
 </head>
 <body>
@@ -658,6 +913,7 @@
 
   <!-- TODAY CARD -->
   <div class="today-card" id="todayCard">
+    <button class="bell-btn" id="bellBtn" onclick="openBell()" title="Submit event for this date">🔔</button>
     <div class="today-label-row">
       <div class="mini-legend">
         <span class="ml-dot" style="background:var(--day-a)"></span><span class="ml-text">Day</span>
@@ -670,8 +926,10 @@
       </div>
       <div class="mini-legend-spacer"></div>
     </div>
-    <div class="shift-icon" id="todayIcon">☀️</div>
+    <span id="iconClickTrap" onclick="handleIconClick()"><div class="shift-icon" id="todayIcon">☀️</div></span>
     <div class="today-status" id="todayStatus">Loading…</div>
+    <div class="event-name" id="eventName" style="display:none"></div>
+    <div class="event-theme-badge" id="eventBadge" style="display:none"></div>
     <div class="today-date" id="todayDate"></div>
 
     <div class="cycle-bar-wrap">
@@ -726,6 +984,76 @@
   </div>
 
   <footer>cycle anchored to 1 Mar 2023 · 12-day rotation</footer>
+
+  <!-- PIN MODAL -->
+  <div class="modal-backdrop" id="pinModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('pinModal')">✕</button>
+      <p class="modal-title">Enter access code</p>
+      <div class="pin-input">
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="p0">
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="p1">
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="p2">
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="p3">
+      </div>
+      <div class="pin-error" id="pinError"></div>
+    </div>
+  </div>
+
+  <!-- SUBMISSION MODAL -->
+  <div class="modal-backdrop" id="submitModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('submitModal')">✕</button>
+      <p class="modal-title" id="submitModalTitle">Submit event</p>
+
+      <div>
+        <label class="form-label">Event name</label>
+        <input class="form-input" id="evName" type="text" placeholder="e.g. Summer BBQ" maxlength="60">
+      </div>
+
+      <div>
+        <label class="form-label">Type</label>
+        <div class="hscroll-wrap" id="typeScroll">
+          <div class="hscroll-opt selected" data-val="public" onclick="selectOpt(this,'typeScroll')">Public</div>
+          <div class="hscroll-opt" data-val="private" onclick="selectOpt(this,'typeScroll')">Private</div>
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Theme</label>
+        <div class="hscroll-wrap" id="themeScroll">
+          <div class="hscroll-opt selected" data-val="party" onclick="selectOpt(this,'themeScroll')">🎉 Party</div>
+          <div class="hscroll-opt" data-val="concert" onclick="selectOpt(this,'themeScroll')">🎵 Concert</div>
+          <div class="hscroll-opt" data-val="camping" onclick="selectOpt(this,'themeScroll')">⛺ Camping</div>
+          <div class="hscroll-opt" data-val="dinner" onclick="selectOpt(this,'themeScroll')">🍽️ Dinner</div>
+          <div class="hscroll-opt" data-val="chill" onclick="selectOpt(this,'themeScroll')">😎 Chill</div>
+        </div>
+      </div>
+
+      <button class="submit-btn" id="submitEvBtn" onclick="submitEvent()">Submit →</button>
+      <div class="form-status" id="formStatus"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN PASSWORD MODAL -->
+  <div class="modal-backdrop" id="adminPwModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('adminPwModal')">✕</button>
+      <p class="modal-title">Admin access</p>
+      <input class="form-input" id="adminPwInput" type="password" placeholder="Password" autocomplete="off">
+      <div class="pin-error" id="adminPwError"></div>
+      <button class="submit-btn" onclick="checkAdminPw()">Enter →</button>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="adminPanel">
+    <div class="admin-header">
+      <span class="admin-title">⚙ Submissions queue</span>
+      <button class="admin-close" onclick="closeAdmin()">← Back</button>
+    </div>
+    <div id="adminQueue"></div>
+  </div>
 
 </div>
 
@@ -1080,6 +1408,8 @@
     buildCycleBar(cyc);
     // Refresh calendar highlight if panel is open
     if (monthPanelOpen) buildMonthCalendar(new Date());
+    // Check for approved event on this date
+    checkAndApplyEvent(date);
   }
 
   // ── VOICE INPUT ───────────────────────────────────────────────────────────
@@ -1154,6 +1484,310 @@
     document.getElementById('checkDay').value   = day;
     const ySel = document.getElementById('checkYear');
     if ([...ySel.options].some(o => parseInt(o.value) === year)) ySel.value = year;
+  }
+
+
+  // ── EVENTS & FIREBASE ────────────────────────────────────────────────────
+  const SUBMIT_PIN  = '2222';
+  const ADMIN_PASS  = 'wordpass';
+
+  // Theme config
+  const THEMES = {
+    party:   { label: '🎉 Party',   css: 'ev-party',   icon: '🎉' },
+    concert: { label: '🎵 Concert', css: 'ev-concert', icon: '🎵' },
+    camping: { label: '⛺ Camping', css: 'ev-camping',  icon: '⛺' },
+    dinner:  { label: '🍽️ Dinner',  css: 'ev-dinner',  icon: '🍽️' },
+    chill:   { label: '😎 Chill',   css: 'ev-chill',   icon: '😎' },
+  };
+
+  // Wait for Firebase then load events for today
+  let db = null, fbM = null;
+  let approvedEvents = {};   // keyed by "YYYY-MM-DD"
+
+  window.addEventListener('firebase-ready', async () => {
+    db  = window._db;
+    fbM = window._fbModules;
+    await loadApprovedEvents();
+    // Re-render to pick up any events on today
+    renderToday();
+  });
+
+  function dateKey(d) {
+    return d.getFullYear() + '-' +
+      String(d.getMonth()+1).padStart(2,'0') + '-' +
+      String(d.getDate()).padStart(2,'0');
+  }
+
+  async function loadApprovedEvents() {
+    if (!db) return;
+    const { collection, getDocs } = fbM;
+    try {
+      const snap = await getDocs(collection(db, 'events'));
+      approvedEvents = {};
+      snap.forEach(d => { approvedEvents[d.id] = d.data(); });
+    } catch(e) { console.warn('Events load failed', e); }
+  }
+
+  // ── BELL / SUBMISSION FLOW ────────────────────────────────────────────────
+  function openBell() {
+    // Open PIN modal for the date currently shown on the card
+    document.getElementById('pinError').textContent = '';
+    ['p0','p1','p2','p3'].forEach(id => document.getElementById(id).value = '');
+    openModal('pinModal');
+    setTimeout(() => document.getElementById('p0').focus(), 100);
+  }
+
+  // Auto-advance PIN digits
+  document.addEventListener('DOMContentLoaded', () => {
+    ['p0','p1','p2','p3'].forEach((id, i) => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => {
+        el.value = el.value.replace(/\D/g,'').slice(0,1);
+        if (el.value && i < 3) document.getElementById('p'+String(i+1)).focus();
+        if (i === 3) checkPin();
+      });
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !el.value && i > 0)
+          document.getElementById('p'+String(i-1)).focus();
+      });
+    });
+  });
+
+  function checkPin() {
+    const pin = ['p0','p1','p2','p3'].map(id => document.getElementById(id).value).join('');
+    if (pin === SUBMIT_PIN) {
+      closeModal('pinModal');
+      openSubmitForm();
+    } else if (pin.length === 4) {
+      document.getElementById('pinError').textContent = 'Incorrect code';
+      ['p0','p1','p2','p3'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('p0').focus();
+    }
+  }
+
+  function openSubmitForm() {
+    const d = viewingDate || new Date();
+    document.getElementById('submitModalTitle').textContent =
+      'Submit event · ' + d.toLocaleDateString('en-CA', { month:'short', day:'numeric', year:'numeric' });
+    document.getElementById('evName').value = '';
+    document.getElementById('formStatus').textContent = '';
+    document.getElementById('formStatus').className = 'form-status';
+    document.getElementById('submitEvBtn').disabled = false;
+    // Reset selectors
+    selectOptByVal('typeScroll', 'public');
+    selectOptByVal('themeScroll', 'party');
+    openModal('submitModal');
+  }
+
+  function selectOpt(el, wrapperId) {
+    document.querySelectorAll('#'+wrapperId+' .hscroll-opt').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function selectOptByVal(wrapperId, val) {
+    document.querySelectorAll('#'+wrapperId+' .hscroll-opt').forEach(o => {
+      o.classList.toggle('selected', o.dataset.val === val);
+    });
+  }
+
+  function getSelected(wrapperId) {
+    const el = document.querySelector('#'+wrapperId+' .hscroll-opt.selected');
+    return el ? el.dataset.val : null;
+  }
+
+  async function submitEvent() {
+    if (!db) { setFormStatus('Database not connected', 'err'); return; }
+    const name  = document.getElementById('evName').value.trim();
+    const type  = getSelected('typeScroll');
+    const theme = getSelected('themeScroll');
+    if (!name) { setFormStatus('Please enter an event name', 'err'); return; }
+
+    const d = viewingDate || new Date();
+    const btn = document.getElementById('submitEvBtn');
+    btn.disabled = true;
+    setFormStatus('Submitting…', '');
+
+    try {
+      const { collection, addDoc, Timestamp } = fbM;
+      await addDoc(collection(db, 'submissions'), {
+        date:      dateKey(d),
+        name, type, theme,
+        submitted: Timestamp.now(),
+      });
+      setFormStatus('Submitted! Awaiting approval.', 'ok');
+      setTimeout(() => closeModal('submitModal'), 2200);
+    } catch(e) {
+      setFormStatus('Error: ' + e.message, 'err');
+      btn.disabled = false;
+    }
+  }
+
+  function setFormStatus(msg, cls) {
+    const el = document.getElementById('formStatus');
+    el.textContent = msg;
+    el.className = 'form-status' + (cls ? ' '+cls : '');
+  }
+
+  // ── EVENT DISPLAY ON CARD ─────────────────────────────────────────────────
+  function applyEventToCard(event) {
+    const card    = document.getElementById('todayCard');
+    const t       = THEMES[event.theme] || THEMES.party;
+    const evName  = document.getElementById('eventName');
+    const evBadge = document.getElementById('eventBadge');
+
+    // Remove all ev- classes then apply the right one
+    Object.values(THEMES).forEach(th => card.classList.remove(th.css));
+    card.classList.add(t.css);
+
+    // Hide shift elements, show event elements
+    document.getElementById('todayIcon').parentElement.style.display  = 'none';
+    document.getElementById('todayStatus').style.display = 'none';
+    evName.textContent   = t.icon + ' ' + event.name;
+    evBadge.textContent  = t.label;
+    evName.style.display = evBadge.style.display = '';
+
+    // Theme the glow to match event
+    const themeGlows = {
+      party:'#be185d', concert:'#6d28d9', camping:'#166534', dinner:'#991b1b', chill:'#1e3a5f'
+    };
+    const g = themeGlows[event.theme] || '#be185d';
+    document.documentElement.style.setProperty('--accent', g);
+    document.documentElement.style.setProperty('--glow', g);
+    document.documentElement.style.setProperty('--orb1', g);
+    document.documentElement.style.setProperty('--orb2', g + '88');
+  }
+
+  function clearEventFromCard() {
+    const card = document.getElementById('todayCard');
+    Object.values(THEMES).forEach(th => card.classList.remove(th.css));
+    document.getElementById('todayIcon').parentElement.style.display  = '';
+    document.getElementById('todayStatus').style.display = '';
+    document.getElementById('eventName').style.display  = 'none';
+    document.getElementById('eventBadge').style.display = 'none';
+    // Update bell indicator
+    document.getElementById('bellBtn').classList.remove('has-event');
+  }
+
+  // Called from updateTodayCard — check if this date has an approved public event
+  async function checkAndApplyEvent(date) {
+    clearEventFromCard();
+    const key = dateKey(date);
+    let ev = approvedEvents[key];
+    // If not cached, try a fresh load (in case just approved)
+    if (!ev && db) { await loadApprovedEvents(); ev = approvedEvents[key]; }
+    if (ev && ev.type === 'public') {
+      applyEventToCard(ev);
+      document.getElementById('bellBtn').classList.add('has-event');
+    }
+  }
+
+  // ── MODAL HELPERS ─────────────────────────────────────────────────────────
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  // ── SNEAKY ADMIN ACCESS ───────────────────────────────────────────────────
+  let iconClickCount = 0, iconClickTimer = null;
+
+  function handleIconClick() {
+    iconClickCount++;
+    clearTimeout(iconClickTimer);
+    iconClickTimer = setTimeout(() => { iconClickCount = 0; }, 2000);
+    if (iconClickCount >= 5) {
+      iconClickCount = 0;
+      document.getElementById('adminPwInput').value = '';
+      document.getElementById('adminPwError').textContent = '';
+      openModal('adminPwModal');
+    }
+  }
+
+  function checkAdminPw() {
+    const pw = document.getElementById('adminPwInput').value;
+    if (pw === ADMIN_PASS) {
+      closeModal('adminPwModal');
+      openAdminPanel();
+    } else {
+      document.getElementById('adminPwError').textContent = 'Incorrect password';
+      document.getElementById('adminPwInput').value = '';
+    }
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const pwInput = document.getElementById('adminPwInput');
+    if (pwInput) pwInput.addEventListener('keydown', e => { if(e.key==='Enter') checkAdminPw(); });
+  });
+
+  // ── ADMIN PANEL ────────────────────────────────────────────────────────────
+  function closeAdmin() {
+    document.getElementById('adminPanel').classList.remove('open');
+  }
+
+  async function openAdminPanel() {
+    document.getElementById('adminPanel').classList.add('open');
+    await loadAdminQueue();
+  }
+
+  async function loadAdminQueue() {
+    if (!db) { return; }
+    const { collection, getDocs, orderBy, query } = fbM;
+    const queue = document.getElementById('adminQueue');
+    queue.innerHTML = '<div class="admin-empty">Loading…</div>';
+
+    try {
+      const q    = query(collection(db, 'submissions'), orderBy('submitted', 'desc'));
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        queue.innerHTML = '<div class="admin-empty">No pending submissions</div>';
+        return;
+      }
+
+      queue.innerHTML = '';
+      snap.forEach(docSnap => {
+        const s = docSnap.data();
+        const t = THEMES[s.theme] || THEMES.party;
+        const card = document.createElement('div');
+        card.className = 'admin-card';
+        card.innerHTML = `
+          <div class="admin-card-date">${s.date}</div>
+          <div class="admin-card-name">${t.icon} ${s.name}</div>
+          <div class="admin-card-meta">
+            <span>Type: ${s.type}</span>
+            <span>Theme: ${t.label}</span>
+            <span>Submitted: ${s.submitted?.toDate?.()?.toLocaleDateString('en-CA') || '—'}</span>
+          </div>
+          <div class="admin-actions">
+            <button class="admin-btn approve" onclick="approveSubmission('${docSnap.id}', ${JSON.stringify(s).replace(/"/g,'&quot;')})">✓ Approve</button>
+            <button class="admin-btn reject"  onclick="rejectSubmission('${docSnap.id}')">✕ Reject</button>
+          </div>`;
+        queue.appendChild(card);
+      });
+    } catch(e) {
+      queue.innerHTML = '<div class="admin-empty">Error loading queue: ' + e.message + '</div>';
+    }
+  }
+
+  async function approveSubmission(id, data) {
+    const { doc, setDoc, deleteDoc, collection } = fbM;
+    try {
+      // Write to events collection keyed by date (one event per day enforced)
+      await setDoc(doc(db, 'events', data.date), {
+        name: data.name, type: data.type, theme: data.theme
+      });
+      await deleteDoc(doc(db, 'submissions', id));
+      await loadApprovedEvents();
+      loadAdminQueue();
+    } catch(e) { alert('Error approving: ' + e.message); }
+  }
+
+  async function rejectSubmission(id) {
+    const { doc, deleteDoc } = fbM;
+    try {
+      await deleteDoc(doc(db, 'submissions', id));
+      loadAdminQueue();
+    } catch(e) { alert('Error rejecting: ' + e.message); }
   }
 
   // ── INIT ─────────────────────────────────────────────────────────────────
