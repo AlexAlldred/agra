@@ -162,21 +162,48 @@
       50%       { transform: translateY(-6px); }
     }
 
-    .reset-hint {
-      font-family: var(--mono);
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--subtle);
-      cursor: pointer;
-      padding: 0.15rem 0.6rem;
-      border: 1px solid var(--border);
-      border-radius: 99px;
-      transition: color 0.2s, border-color 0.2s;
-      margin-bottom: -0.25rem;
+    /* label row: mini-legend left | today label centre | spacer right */
+    .today-label-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      width: 100%;
+      gap: 0.5rem;
     }
-    .reset-hint:hover { color: var(--text); border-color: var(--muted); }
-
+    .mini-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 0.28rem;
+      padding-top: 0.1rem;
+    }
+    .mini-legend-spacer {
+      /* mirrors mini-legend width so centre column stays centred */
+      flex: 0 0 auto;
+      width: 52px;
+    }
+    .ml-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 0.3rem;
+      flex-shrink: 0;
+    }
+    .ml-text {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      vertical-align: middle;
+    }
+    .today-label-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      flex: 1;
+    }
     .today-label {
       font-family: var(--mono);
       font-size: 0.72rem;
@@ -184,6 +211,28 @@
       text-transform: uppercase;
       color: var(--subtle);
     }
+    .reset-hint {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--subtle);
+      cursor: pointer;
+      padding: 0.15rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      white-space: nowrap;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, color 0.2s, border-color 0.2s;
+    }
+    .reset-hint.visible {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .reset-hint:hover { color: var(--text); border-color: var(--muted); }
     .today-status {
       font-size: clamp(1.5rem, 4vw, 2rem);
       font-weight: 700;
@@ -217,34 +266,93 @@
       gap: 4px;
       width: 100%;
       align-items: center;
-      height: 28px;
+      height: 36px;        /* tall enough for wave + label */
+      cursor: pointer;
+      user-select: none;
     }
+
+    /* ── base segment ── */
     .seg {
       flex: 1;
       height: 5px;
       border-radius: 99px;
       background: var(--border);
-      transition: height 0.35s cubic-bezier(.34,1.56,.64,1),
-                  background 0.35s ease,
-                  box-shadow 0.35s ease,
-                  opacity 0.35s ease;
       opacity: 0.45;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+      transition:
+        height 0.28s cubic-bezier(.34,1.4,.64,1),
+        border-radius 0.28s ease,
+        opacity 0.28s ease,
+        box-shadow 0.28s ease;
     }
     .seg.day-work   { background: var(--day-a); }
     .seg.day-off    { background: var(--off-a); }
     .seg.night-work { background: var(--night-a); }
     .seg.night-off  { background: var(--off-b); }
-    /* Active segment: taller, full opacity, glowing halo */
+
+    /* day-of-month label inside pill */
+    .seg-label {
+      position: absolute;
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      font-weight: 500;
+      color: rgba(0,0,0,0.75);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      white-space: nowrap;
+      line-height: 1;
+    }
+
+    /* ── wave states ── */
+    /* far neighbours: 11px */
+    .seg.wave-far {
+      height: 11px;
+      border-radius: 99px;
+      opacity: 0.6;
+    }
+    /* near neighbours: 19px */
+    .seg.wave-near {
+      height: 19px;
+      border-radius: 8px;
+      opacity: 0.75;
+    }
+    /* hovered / focused centre: full pill, no glow */
+    .seg.hovered {
+      height: 34px;
+      border-radius: 8px;
+      opacity: 0.9;
+    }
+    .seg.hovered .seg-label { opacity: 1; }
+
+    /* ── active (today / selected) ── */
     .seg.active {
-      height: 28px;
+      height: 34px;
       opacity: 1;
-      border-radius: 6px;
+      border-radius: 8px;
       box-shadow:
         0 0 0 3px color-mix(in srgb, var(--glow) 25%, transparent),
         0 0 16px color-mix(in srgb, var(--glow) 55%, transparent),
         0 0 32px color-mix(in srgb, var(--glow) 25%, transparent);
       animation: segPulse 2.5s ease-in-out infinite;
     }
+    .seg.active .seg-label { opacity: 1; }
+
+    /* active wins over wave states */
+    .seg.active.hovered,
+    .seg.active.wave-near,
+    .seg.active.wave-far {
+      height: 34px;
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--glow) 25%, transparent),
+        0 0 16px color-mix(in srgb, var(--glow) 55%, transparent),
+        0 0 32px color-mix(in srgb, var(--glow) 25%, transparent);
+    }
+
     @keyframes segPulse {
       0%, 100% { box-shadow:
         0 0 0 3px color-mix(in srgb, var(--glow) 25%, transparent),
@@ -333,25 +441,6 @@
 
 
     /* ── LEGEND ─────────────────────────────────────────── */
-    .legend {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      color: var(--subtle);
-    }
-    .legend-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
     /* ── FOOTER ─────────────────────────────────────────── */
     footer {
       text-align: center;
@@ -397,11 +486,12 @@
       width: 100%;
     }
     .month-panel.open {
-      max-height: 400px;
+      max-height: 600px;
       opacity: 1;
     }
     .month-panel-inner {
       padding-top: 1rem;
+      padding-bottom: 0.75rem;
       border-top: 1px solid var(--border);
       margin-top: 0.5rem;
     }
@@ -452,6 +542,13 @@
       outline-offset: -2px;
       color: var(--text);
       font-weight: 700;
+    }
+    .day-cell.selected-cell {
+      outline: 2px dashed var(--accent);
+      outline-offset: -2px;
+      color: var(--text);
+      font-weight: 700;
+      opacity: 1;
     }
 
     /* ── VOICE BUTTON ───────────────────────────────────── */
@@ -551,9 +648,17 @@
 
   <!-- TODAY CARD -->
   <div class="today-card" id="todayCard">
-    <p class="today-label" id="todayLabel">Today</p>
-    <div class="reset-hint" id="resetHint" onclick="resetToToday()" style="display:none">
-      ← Back to today
+    <div class="today-label-row">
+      <div class="mini-legend">
+        <span class="ml-dot" style="background:var(--day-a)"></span><span class="ml-text">Day</span>
+        <span class="ml-dot" style="background:var(--off-a)"></span><span class="ml-text">Off</span>
+        <span class="ml-dot" style="background:var(--night-a)"></span><span class="ml-text">Night</span>
+      </div>
+      <div class="today-label-center">
+        <p class="today-label" id="todayLabel">Today</p>
+        <div class="reset-hint" id="resetHint" onclick="resetToToday()">← Back to today</div>
+      </div>
+      <div class="mini-legend-spacer"></div>
     </div>
     <div class="shift-icon" id="todayIcon">☀️</div>
     <div class="today-status" id="todayStatus">Loading…</div>
@@ -608,17 +713,6 @@
     </div>
     <div class="voice-status" id="voiceStatus"></div>
 
-  </div>
-
-  <!-- LEGEND -->
-  <div class="checker-card">
-    <h2>Cycle legend</h2>
-    <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--day-a)"></div> Days 1–3: Day shifts</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--off-a)"></div> Days 4–6: Days off</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--night-a)"></div> Days 7–9: Night shifts</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--off-b)"></div> Days 10–12: Days off</div>
-    </div>
   </div>
 
   <footer>cycle anchored to 1 Mar 2023 · 12-day rotation</footer>
@@ -710,22 +804,132 @@
   }
 
   // ── CYCLE PROGRESS BAR ───────────────────────────────────────────────────
+  // ── CYCLE BAR ────────────────────────────────────────────────────────────
+  const SEG_CLASSES = [
+    'day-work','day-work','day-work',
+    'day-off','day-off','day-off',
+    'night-work','night-work','night-work',
+    'night-off','night-off','night-off',
+  ];
+
+  // Returns the calendar date that is `offset` days from today
+  function dateOffsetFromToday(offsetDays) {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return d;
+  }
+
+  // Given a target cycle index, find the nearest date (today or future)
+  // that falls on that index for the active crew
+  function dateForCycleIndex(targetIndex) {
+    const today = new Date();
+    const todayIndex = getCycleDayForCrew(today, activeCrew);
+    // How many days forward until we hit targetIndex?
+    let offset = ((targetIndex - todayIndex) + 12) % 12;
+    return dateOffsetFromToday(offset);
+  }
+
   function buildCycleBar(currentCycleDay) {
-    const segClasses = [
-      'day-work','day-work','day-work',
-      'day-off','day-off','day-off',
-      'night-work','night-work','night-work',
-      'night-off','night-off','night-off',
-    ];
     const container = document.getElementById('cycleSegments');
     container.innerHTML = '';
+
     for (let i = 0; i < 12; i++) {
       const seg = document.createElement('div');
-      seg.className = 'seg ' + segClasses[i] + (i === currentCycleDay ? ' active' : '');
+      seg.className = 'seg ' + SEG_CLASSES[i] + (i === currentCycleDay ? ' active' : '');
+      seg.dataset.index = i;
+
+      // Day-of-month label — computed for the date this cycle slot maps to
+      const slotDate = dateForCycleIndex(i);
+      const label = document.createElement('span');
+      label.className = 'seg-label';
+      label.textContent = slotDate.getDate();
+      seg.appendChild(label);
+
       container.appendChild(seg);
     }
+
     document.getElementById('cyclePos').textContent =
       currentCycleDay === -1 ? 'vacation' : `day ${currentCycleDay + 1} / 12`;
+
+    initCycleBarInteraction(container);
+  }
+
+  // ── WAVE INTERACTION ──────────────────────────────────────────────────────
+  let cycleBarListenersAttached = false;
+
+  function initCycleBarInteraction(container) {
+    // Remove old listeners by replacing container's clone (clean slate)
+    const fresh = container.cloneNode(true);
+    container.parentNode.replaceChild(fresh, container);
+    const c = document.getElementById('cycleSegments');
+
+    function getSegs() { return [...c.querySelectorAll('.seg')]; }
+
+    function applyWave(hoveredIndex) {
+      getSegs().forEach((seg, i) => {
+        seg.classList.remove('hovered', 'wave-near', 'wave-far');
+        const dist = Math.abs(i - hoveredIndex);
+        if (dist === 0) seg.classList.add('hovered');
+        else if (dist === 1) seg.classList.add('wave-near');
+        else if (dist === 2) seg.classList.add('wave-far');
+      });
+    }
+
+    function clearWave() {
+      getSegs().forEach(seg => seg.classList.remove('hovered', 'wave-near', 'wave-far'));
+    }
+
+    function selectSeg(index) {
+      const targetDate = dateForCycleIndex(index);
+      viewingDate = targetDate;
+      updateTodayCard(targetDate);
+    }
+
+    // ── DESKTOP: mousemove + click ──────────────────────────────────────
+    c.addEventListener('mousemove', e => {
+      const seg = e.target.closest('.seg');
+      if (!seg) { clearWave(); return; }
+      applyWave(parseInt(seg.dataset.index));
+    });
+
+    c.addEventListener('mouseleave', clearWave);
+
+    c.addEventListener('click', e => {
+      const seg = e.target.closest('.seg');
+      if (!seg) return;
+      selectSeg(parseInt(seg.dataset.index));
+    });
+
+    // ── MOBILE: touch ──────────────────────────────────────────────────
+    let touchActive = false;
+
+    c.addEventListener('touchstart', e => {
+      touchActive = true;
+      const touch = e.touches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const seg = el && el.closest('.seg');
+      if (seg) applyWave(parseInt(seg.dataset.index));
+      e.preventDefault(); // stop scroll-bleed
+    }, { passive: false });
+
+    c.addEventListener('touchmove', e => {
+      const touch = e.touches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const seg = el && el.closest('.seg');
+      if (seg) applyWave(parseInt(seg.dataset.index));
+      e.preventDefault();
+    }, { passive: false });
+
+    c.addEventListener('touchend', e => {
+      const touch = e.changedTouches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const seg = el && el.closest('.seg');
+      if (seg) {
+        selectSeg(parseInt(seg.dataset.index));
+      }
+      clearWave();
+      touchActive = false;
+    });
   }
 
   // ── MONTH CALENDAR ────────────────────────────────────────────────────────
@@ -744,6 +948,7 @@
 
   function buildMonthCalendar(refDate) {
     const today       = new Date();
+    const viewing     = viewingDate;   // may be null
     const year        = refDate.getFullYear();
     const month       = refDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -769,11 +974,15 @@
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
-      const cellDate = new Date(year, month, d);
-      const info     = shiftInfo(cellDate, activeCrew);
-      const isToday  = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-      const cell     = document.createElement('div');
-      cell.className = 'day-cell ' + info.segClass + (isToday ? ' today-cell' : '');
+      const cellDate  = new Date(year, month, d);
+      const info      = shiftInfo(cellDate, activeCrew);
+      const isToday   = d === today.getDate()   && month === today.getMonth()   && year === today.getFullYear();
+      const isViewing = viewing && d === viewing.getDate() && month === viewing.getMonth() && year === viewing.getFullYear();
+      const cell      = document.createElement('div');
+      let cls = 'day-cell ' + info.segClass;
+      if (isToday)   cls += ' today-cell';
+      if (isViewing && !isToday) cls += ' selected-cell';
+      cell.className  = cls;
       cell.textContent = d;
       cell.title = activeCrew + ' Crew: ' + info.label;
       grid.appendChild(cell);
@@ -855,10 +1064,12 @@
 
     // Show/hide reset hint
     const hint = document.getElementById('resetHint');
-    hint.style.display = isToday ? 'none' : 'block';
+    hint.classList.toggle('visible', !isToday);
 
     applyTheme(info);
     buildCycleBar(cyc);
+    // Refresh calendar highlight if panel is open
+    if (monthPanelOpen) buildMonthCalendar(new Date());
   }
 
   // ── VOICE INPUT ───────────────────────────────────────────────────────────
