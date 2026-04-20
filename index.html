@@ -15,14 +15,14 @@
 
     // ── PASTE YOUR FIREBASE CONFIG HERE AFTER CREATING PROJECT ──────────────
     // Instructions in README.md  ↓  replace these placeholder values
-  const firebaseConfig = {
-  apiKey: "AIzaSyCH1mmqlbR0qjOsmVfkTE97sMGQbgwiCkM",
-  authDomain: "shift-tracker-cb8b5.firebaseapp.com",
-  projectId: "shift-tracker-cb8b5",
-  storageBucket: "shift-tracker-cb8b5.firebasestorage.app",
-  messagingSenderId: "236760486594",
-  appId: "1:236760486594:web:412e8b4fca73b7d402a15b"
-};
+    const firebaseConfig = {
+      apiKey:            "PASTE_YOUR_API_KEY",
+      authDomain:        "PASTE_YOUR_AUTH_DOMAIN",
+      projectId:         "PASTE_YOUR_PROJECT_ID",
+      storageBucket:     "PASTE_YOUR_STORAGE_BUCKET",
+      messagingSenderId: "PASTE_YOUR_SENDER_ID",
+      appId:             "PASTE_YOUR_APP_ID"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
@@ -820,10 +820,49 @@
       background: radial-gradient(ellipse at 50% -20%, var(--ev1) 0%, transparent 65%);
       opacity: 0.18;
     }
+    /* Fixed-height slot — shift state and event state occupy identical space */
+    .card-main-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* Match the natural height of icon (3.5rem line-height ~56px)
+         + gap (1.25rem ~20px) + today-status (~32px) = ~108px.
+         We use min-height so longer event names never collapse weirdly. */
+      min-height: 108px;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      position: relative;
+    }
+    /* Shift elements: visible by default */
+    #iconClickTrap  { transition: opacity 0.3s; }
+    #todayStatus    { transition: opacity 0.3s; }
+    /* Event elements: hidden by default */
+    #eventName, #eventBadge {
+      position: absolute;
+      left: 0; right: 0;
+      display: flex; justify-content: center;
+      transition: opacity 0.3s;
+      opacity: 0; pointer-events: none;
+    }
+    #eventName  { top: 50%; transform: translateY(calc(-50% - 14px)); }
+    #eventBadge { top: 50%; transform: translateY(calc(-50% + 24px)); }
+
+    /* .ev-active on the slot flips which layer is visible */
+    .card-main-slot.ev-active #iconClickTrap,
+    .card-main-slot.ev-active #todayStatus {
+      opacity: 0; pointer-events: none;
+    }
+    .card-main-slot.ev-active #eventName,
+    .card-main-slot.ev-active #eventBadge {
+      opacity: 1; pointer-events: auto;
+    }
+
     .event-name {
-      font-size: clamp(1.4rem, 4vw, 1.9rem);
+      font-size: clamp(1.3rem, 4vw, 1.8rem);
       font-weight: 800; letter-spacing: -0.02em;
       text-align: center; line-height: 1.2;
+      width: 100%;
     }
     .event-theme-badge {
       font-family: var(--mono); font-size: 0.65rem;
@@ -926,10 +965,14 @@
       </div>
       <div class="mini-legend-spacer"></div>
     </div>
-    <span id="iconClickTrap" onclick="handleIconClick()"><div class="shift-icon" id="todayIcon">☀️</div></span>
-    <div class="today-status" id="todayStatus">Loading…</div>
-    <div class="event-name" id="eventName" style="display:none"></div>
-    <div class="event-theme-badge" id="eventBadge" style="display:none"></div>
+    <div class="card-main-slot">
+      <!-- Shift state (default) -->
+      <span id="iconClickTrap" onclick="handleIconClick()"><div class="shift-icon" id="todayIcon">☀️</div></span>
+      <div class="today-status" id="todayStatus">Loading…</div>
+      <!-- Event state (overlaid, same slot) -->
+      <div class="event-name" id="eventName"></div>
+      <div class="event-theme-badge" id="eventBadge"></div>
+    </div>
     <div class="today-date" id="todayDate"></div>
 
     <div class="cycle-bar-wrap">
@@ -1639,12 +1682,10 @@
     Object.values(THEMES).forEach(th => card.classList.remove(th.css));
     card.classList.add(t.css);
 
-    // Hide shift elements, show event elements
-    document.getElementById('todayIcon').parentElement.style.display  = 'none';
-    document.getElementById('todayStatus').style.display = 'none';
-    evName.textContent   = t.icon + ' ' + event.name;
-    evBadge.textContent  = t.label;
-    evName.style.display = evBadge.style.display = '';
+    // Flip slot to event state
+    document.querySelector('.card-main-slot').classList.add('ev-active');
+    evName.textContent  = t.icon + ' ' + event.name;
+    evBadge.textContent = t.label;
 
     // Theme the glow to match event
     const themeGlows = {
@@ -1660,10 +1701,7 @@
   function clearEventFromCard() {
     const card = document.getElementById('todayCard');
     Object.values(THEMES).forEach(th => card.classList.remove(th.css));
-    document.getElementById('todayIcon').parentElement.style.display  = '';
-    document.getElementById('todayStatus').style.display = '';
-    document.getElementById('eventName').style.display  = 'none';
-    document.getElementById('eventBadge').style.display = 'none';
+    document.querySelector('.card-main-slot').classList.remove('ev-active');
     // Update bell indicator
     document.getElementById('bellBtn').classList.remove('has-event');
   }
