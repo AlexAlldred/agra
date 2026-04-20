@@ -172,21 +172,22 @@
     }
     .mini-legend {
       display: flex;
-      flex-direction: column;
-      gap: 0.28rem;
-      padding-top: 0.1rem;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.6rem;
+      padding-top: 0.18rem;
+      flex-wrap: wrap;
     }
     .mini-legend-spacer {
-      /* mirrors mini-legend width so centre column stays centred */
-      flex: 0 0 auto;
-      width: 52px;
+      flex: 1;
+      min-width: 0;
     }
     .ml-dot {
       display: inline-block;
       width: 7px; height: 7px;
       border-radius: 50%;
       vertical-align: middle;
-      margin-right: 0.3rem;
+      margin-right: 0.25rem;
       flex-shrink: 0;
     }
     .ml-text {
@@ -266,7 +267,7 @@
       gap: 4px;
       width: 100%;
       align-items: center;
-      height: 36px;        /* tall enough for wave + label */
+      height: 52px;        /* tall enough for wave + label + touch target */
       cursor: pointer;
       user-select: none;
     }
@@ -288,6 +289,15 @@
         border-radius 0.28s ease,
         opacity 0.28s ease,
         box-shadow 0.28s ease;
+    }
+    /* Invisible tall touch target — sits above/below the visible bar */
+    .seg::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      top: 50%; transform: translateY(-50%);
+      height: 44px;   /* generous finger tap zone */
+      border-radius: 4px;
     }
     .seg.day-work   { background: var(--day-a); }
     .seg.day-off    { background: var(--off-a); }
