@@ -52,12 +52,50 @@
       overflow-x: hidden;
     }
 
-    /* subtle noise overlay */
-    body::before {
+    /* ── ANIMATED BACKGROUND ───────────────────────────── */
+    /* CSS custom props driven by JS to shift between day/night/off states */
+    :root {
+      --orb1: #f97316;
+      --orb2: #fb923c;
+      --orb3: #0b0e14;
+      --orb4: #1a0a00;
+    }
+
+    body::before,
+    body::after {
       content: '';
-      position: fixed; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none; z-index: 0;
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Layer 1: slow drifting orbs */
+    body::before {
+      inset: -40%;
+      width: 180%;
+      height: 180%;
+      background:
+        radial-gradient(ellipse 55% 40% at 20% 30%, var(--orb1) 0%, transparent 65%),
+        radial-gradient(ellipse 45% 55% at 80% 70%, var(--orb2) 0%, transparent 65%),
+        radial-gradient(ellipse 70% 50% at 50% 110%, var(--orb3) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 90% 10%,  var(--orb4) 0%, transparent 65%);
+      opacity: 0.18;
+      animation: orbDrift 22s ease-in-out infinite alternate;
+      transition: opacity 1.5s ease;
+    }
+
+    @keyframes orbDrift {
+      0%   { transform: translate(0,    0)    scale(1); }
+      25%  { transform: translate(3%,   2%)   scale(1.03); }
+      50%  { transform: translate(-2%,  4%)   scale(0.97); }
+      75%  { transform: translate(4%,  -2%)   scale(1.02); }
+      100% { transform: translate(-3%,  3%)   scale(1.04); }
+    }
+
+    /* Layer 2: fine grain noise */
+    body::after {
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
     }
 
     /* ── LAYOUT ────────────────────────────────────────── */
@@ -170,27 +208,53 @@
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--subtle);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
       display: flex;
       justify-content: space-between;
     }
     .cycle-segments {
       display: flex;
-      gap: 3px;
+      gap: 4px;
       width: 100%;
+      align-items: center;
+      height: 28px;
     }
     .seg {
       flex: 1;
-      height: 6px;
+      height: 5px;
       border-radius: 99px;
       background: var(--border);
-      transition: background 0.4s;
+      transition: height 0.35s cubic-bezier(.34,1.56,.64,1),
+                  background 0.35s ease,
+                  box-shadow 0.35s ease,
+                  opacity 0.35s ease;
+      opacity: 0.45;
     }
-    .seg.day-work  { background: var(--day-a); }
-    .seg.day-off   { background: var(--off-a); }
+    .seg.day-work   { background: var(--day-a); }
+    .seg.day-off    { background: var(--off-a); }
     .seg.night-work { background: var(--night-a); }
-    .seg.night-off { background: var(--off-b); }
-    .seg.active    { box-shadow: 0 0 8px var(--glow); }
+    .seg.night-off  { background: var(--off-b); }
+    /* Active segment: taller, full opacity, glowing halo */
+    .seg.active {
+      height: 28px;
+      opacity: 1;
+      border-radius: 6px;
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--glow) 25%, transparent),
+        0 0 16px color-mix(in srgb, var(--glow) 55%, transparent),
+        0 0 32px color-mix(in srgb, var(--glow) 25%, transparent);
+      animation: segPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes segPulse {
+      0%, 100% { box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--glow) 25%, transparent),
+        0 0 16px color-mix(in srgb, var(--glow) 55%, transparent),
+        0 0 32px color-mix(in srgb, var(--glow) 25%, transparent); }
+      50% { box-shadow:
+        0 0 0 4px color-mix(in srgb, var(--glow) 35%, transparent),
+        0 0 24px color-mix(in srgb, var(--glow) 70%, transparent),
+        0 0 48px color-mix(in srgb, var(--glow) 35%, transparent); }
+    }
 
     /* ── CHECKER CARD ───────────────────────────────────── */
     .checker-card {
@@ -624,9 +688,25 @@
   }
 
   // ── THEME ─────────────────────────────────────────────────────────────────
+  // Background orb colours keyed to shift state
+  const BG_ORBS = {
+    '--day-a':   ['#7c2d00', '#92350a', '#1a0800', '#2d1000'],   // ember dawn
+    '--off-a':   ['#064e3b', '#065f46', '#020f0a', '#021a0e'],   // cool forest
+    '--night-a': ['#1e1b4b', '#312e81', '#020208', '#070514'],   // deep indigo
+    '--off-b':   ['#164e63', '#155e75', '#020d12', '#041620'],   // slate teal
+    '--vac-a':   ['#831843', '#9d174d', '#0f0008', '#200010'],   // hot pink dusk
+  };
+
   function applyTheme(info) {
     document.documentElement.style.setProperty('--accent', `var(${info.colorVar})`);
     document.documentElement.style.setProperty('--glow',   `var(${info.colorVar})`);
+
+    const orbs = BG_ORBS[info.colorVar] || BG_ORBS['--day-a'];
+    const root = document.documentElement;
+    root.style.setProperty('--orb1', orbs[0]);
+    root.style.setProperty('--orb2', orbs[1]);
+    root.style.setProperty('--orb3', orbs[2]);
+    root.style.setProperty('--orb4', orbs[3]);
   }
 
   // ── CYCLE PROGRESS BAR ───────────────────────────────────────────────────
