@@ -15,20 +15,13 @@
 
     // ── PASTE YOUR FIREBASE CONFIG HERE AFTER CREATING PROJECT ──────────────
     // Instructions in README.md  ↓  replace these placeholder values
-  const firebaseConfig = {
-
+   const firebaseConfig = {
   apiKey: "AIzaSyCH1mmqlbR0qjOsmVfkTE97sMGQbgwiCkM",
-
   authDomain: "shift-tracker-cb8b5.firebaseapp.com",
-
   projectId: "shift-tracker-cb8b5",
-
   storageBucket: "shift-tracker-cb8b5.firebasestorage.app",
-
   messagingSenderId: "236760486594",
-
   appId: "1:236760486594:web:412e8b4fca73b7d402a15b"
-
 };
 
     const app = initializeApp(firebaseConfig);
@@ -817,67 +810,62 @@
     .form-status.err { color: #f87171; }
 
     /* ── EVENT CARD THEMES ──────────────────────────────── */
-    .today-card.ev-party   { --ev1:#be185d; --ev2:#b45309; border-color: #be185d; }
-    .today-card.ev-concert { --ev1:#6d28d9; --ev2:#0891b2; border-color: #6d28d9; }
-    .today-card.ev-camping { --ev1:#166534; --ev2:#713f12; border-color: #166534; }
-    .today-card.ev-dinner  { --ev1:#991b1b; --ev2:#92400e; border-color: #991b1b; }
-    .today-card.ev-chill   { --ev1:#1e3a5f; --ev2:#4c1d95; border-color: #1e3a5f; }
 
-    .today-card[class*="ev-"]::after {
-      background: radial-gradient(ellipse at 50% -20%, var(--ev1) 0%, transparent 65%);
-      opacity: 0.18;
-    }
-    /* Fixed-height slot — shift state and event state occupy identical space */
-    .card-main-slot {
+    /* ── EVENT BADGE (inline, beside shift info) ───────── */
+    .event-badge-row {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      /* Match the natural height of icon (3.5rem line-height ~56px)
-         + gap (1.25rem ~20px) + today-status (~32px) = ~108px.
-         We use min-height so longer event names never collapse weirdly. */
-      min-height: 108px;
-      justify-content: center;
-      gap: 0.5rem;
-      width: 100%;
-      position: relative;
+      gap: 0.55rem;
+      /* hidden until an event is active */
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transition: opacity 0.3s ease, max-height 0.3s ease;
     }
-    /* Shift elements: visible by default */
-    #iconClickTrap  { transition: opacity 0.3s; }
-    #todayStatus    { transition: opacity 0.3s; }
-    /* Event elements: hidden by default */
-    #eventName, #eventBadge {
-      position: absolute;
-      left: 0; right: 0;
-      display: flex; justify-content: center;
-      transition: opacity 0.3s;
-      opacity: 0; pointer-events: none;
+    .event-badge-row.visible {
+      opacity: 1;
+      max-height: 40px;
+      pointer-events: auto;
     }
-    #eventName  { top: 50%; transform: translateY(calc(-50% - 14px)); }
-    #eventBadge { top: 50%; transform: translateY(calc(-50% + 24px)); }
-
-    /* .ev-active on the slot flips which layer is visible */
-    .card-main-slot.ev-active #iconClickTrap,
-    .card-main-slot.ev-active #todayStatus {
-      opacity: 0; pointer-events: none;
+    /* The coloured pill — theme sets colour via --ev-col */
+    .ev-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.22rem 0.65rem;
+      border-radius: 99px;
+      border: 1.5px solid var(--ev-col, var(--accent));
+      background: color-mix(in srgb, var(--ev-col, var(--accent)) 14%, transparent);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--ev-col, var(--accent)) 35%, transparent);
+      animation: badgePulse 3s ease-in-out infinite;
     }
-    .card-main-slot.ev-active #eventName,
-    .card-main-slot.ev-active #eventBadge {
-      opacity: 1; pointer-events: auto;
+    @keyframes badgePulse {
+      0%,100% { box-shadow: 0 0 8px  color-mix(in srgb, var(--ev-col) 35%, transparent); }
+      50%      { box-shadow: 0 0 16px color-mix(in srgb, var(--ev-col) 60%, transparent); }
     }
-
-    .event-name {
-      font-size: clamp(1.3rem, 4vw, 1.8rem);
-      font-weight: 800; letter-spacing: -0.02em;
-      text-align: center; line-height: 1.2;
-      width: 100%;
+    .ev-badge-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--ev-col, var(--accent));
+      flex-shrink: 0;
     }
-    .event-theme-badge {
-      font-family: var(--mono); font-size: 0.65rem;
-      letter-spacing: 0.18em; text-transform: uppercase;
-      padding: 0.2rem 0.7rem;
-      border-radius: 99px; border: 1px solid currentColor;
-      opacity: 0.75;
+    .ev-badge-name {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      white-space: nowrap;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+    /* Theme colour tokens — one per theme */
+    .ev-badge-pill.ev-party   { --ev-col: #ec4899; }
+    .ev-badge-pill.ev-concert { --ev-col: #a78bfa; }
+    .ev-badge-pill.ev-camping { --ev-col: #4ade80; }
+    .ev-badge-pill.ev-dinner  { --ev-col: #fb923c; }
+    .ev-badge-pill.ev-chill   { --ev-col: #7dd3fc; }
 
     /* ── ADMIN PANEL ────────────────────────────────────── */
     #adminPanel {
@@ -938,6 +926,41 @@
       color: var(--muted); text-align: center; padding: 2rem 0;
       letter-spacing: 0.1em;
     }
+
+    .admin-tabs {
+      display: flex;
+      gap: 0.4rem;
+      width: 100%; max-width: 600px;
+    }
+    .admin-tab {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--subtle);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      padding: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+    .admin-tab:hover { color: var(--text); border-color: var(--muted); }
+    .admin-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      font-weight: 600;
+    }
+    .admin-btn.edit   { background: #1e3a5f; color: #7dd3fc; border: 1px solid #7dd3fc; }
+    .admin-btn.delete { background: #3f1a1a; color: #f87171; border: 1px solid #f87171; }
+    .admin-badge-past { opacity: 0.45; }
+    .admin-card-past-label {
+      font-family: var(--mono); font-size: 0.58rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: #f87171; margin-bottom: -0.25rem;
+    }
     /* icon click counter — invisible */
     #iconClickTrap { cursor: pointer; display: contents; }
   </style>
@@ -972,13 +995,14 @@
       </div>
       <div class="mini-legend-spacer"></div>
     </div>
-    <div class="card-main-slot">
-      <!-- Shift state (default) -->
-      <span id="iconClickTrap" onclick="handleIconClick()"><div class="shift-icon" id="todayIcon">☀️</div></span>
-      <div class="today-status" id="todayStatus">Loading…</div>
-      <!-- Event state (overlaid, same slot) -->
-      <div class="event-name" id="eventName"></div>
-      <div class="event-theme-badge" id="eventBadge"></div>
+    <span id="iconClickTrap" onclick="handleIconClick()"><div class="shift-icon" id="todayIcon">☀️</div></span>
+    <div class="today-status" id="todayStatus">Loading…</div>
+    <!-- Event badge: sits inline below shift info, zero height when hidden -->
+    <div class="event-badge-row" id="eventBadgeRow">
+      <div class="ev-badge-pill" id="evBadgePill">
+        <span class="ev-badge-dot"></span>
+        <span class="ev-badge-name" id="evBadgeName"></span>
+      </div>
     </div>
     <div class="today-date" id="todayDate"></div>
 
@@ -1099,10 +1123,48 @@
   <!-- ADMIN PANEL -->
   <div id="adminPanel">
     <div class="admin-header">
-      <span class="admin-title">⚙ Submissions queue</span>
+      <span class="admin-title">⚙ Admin</span>
       <button class="admin-close" onclick="closeAdmin()">← Back</button>
     </div>
+    <!-- Tabs -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="queue" onclick="switchAdminTab('queue')">Submissions</button>
+      <button class="admin-tab" data-tab="events" onclick="switchAdminTab('events')">Events</button>
+    </div>
     <div id="adminQueue"></div>
+    <div id="adminEvents" style="display:none;width:100%;max-width:600px;"></div>
+  </div>
+
+  <!-- ADMIN EDIT MODAL -->
+  <div class="modal-backdrop" id="adminEditModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('adminEditModal')">✕</button>
+      <p class="modal-title">Edit event</p>
+      <input type="hidden" id="editEventId">
+      <div>
+        <label class="form-label">Event name</label>
+        <input class="form-input" id="editEvName" type="text" maxlength="60">
+      </div>
+      <div>
+        <label class="form-label">Type</label>
+        <div class="hscroll-wrap" id="editTypeScroll">
+          <div class="hscroll-opt selected" data-val="public" onclick="selectOpt(this,'editTypeScroll')">Public</div>
+          <div class="hscroll-opt" data-val="private" onclick="selectOpt(this,'editTypeScroll')">Private</div>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Theme</label>
+        <div class="hscroll-wrap" id="editThemeScroll">
+          <div class="hscroll-opt selected" data-val="party" onclick="selectOpt(this,'editThemeScroll')">🎉 Party</div>
+          <div class="hscroll-opt" data-val="concert" onclick="selectOpt(this,'editThemeScroll')">🎵 Concert</div>
+          <div class="hscroll-opt" data-val="camping" onclick="selectOpt(this,'editThemeScroll')">⛺ Camping</div>
+          <div class="hscroll-opt" data-val="dinner" onclick="selectOpt(this,'editThemeScroll')">🍽️ Dinner</div>
+          <div class="hscroll-opt" data-val="chill" onclick="selectOpt(this,'editThemeScroll')">😎 Chill</div>
+        </div>
+      </div>
+      <button class="submit-btn" onclick="saveEditedEvent()">Save →</button>
+      <div class="form-status" id="editFormStatus"></div>
+    </div>
   </div>
 
 </div>
@@ -1552,11 +1614,30 @@
 
   // Wait for Firebase then load events for today
   let db = null, fbM = null;
-  let approvedEvents = {};   // keyed by "YYYY-MM-DD"
+
+  // ── TEST MODE MOCK ────────────────────────────────────────────────────────
+  // Pre-seeds a fake event on today so the badge/UI can be tested without a
+  // live database. Automatically wiped the moment Firebase connects — it will
+  // never appear once a real projectId is configured.
+  const _isUnconfigured = document.querySelector('script[type="module"]')
+    ?.textContent?.includes('PASTE_YOUR_API_KEY');
+
+  function _todayKey() {
+    const d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth()+1).padStart(2,'0') + '-' +
+      String(d.getDate()).padStart(2,'0');
+  }
+
+  let approvedEvents = _isUnconfigured
+    ? { [_todayKey()]: { name: 'Test Event', type: 'public', theme: 'concert' } }
+    : {};
+  // ─────────────────────────────────────────────────────────────────────────
 
   window.addEventListener('firebase-ready', async () => {
     db  = window._db;
     fbM = window._fbModules;
+    approvedEvents = {};   // clear any test-mode mock before loading real data
     await loadApprovedEvents();
     // Re-render to pick up any events on today
     renderToday();
@@ -1680,36 +1761,22 @@
 
   // ── EVENT DISPLAY ON CARD ─────────────────────────────────────────────────
   function applyEventToCard(event) {
-    const card    = document.getElementById('todayCard');
-    const t       = THEMES[event.theme] || THEMES.party;
-    const evName  = document.getElementById('eventName');
-    const evBadge = document.getElementById('eventBadge');
+    const t    = THEMES[event.theme] || THEMES.party;
+    const pill = document.getElementById('evBadgePill');
+    const name = document.getElementById('evBadgeName');
+    const row  = document.getElementById('eventBadgeRow');
 
-    // Remove all ev- classes then apply the right one
-    Object.values(THEMES).forEach(th => card.classList.remove(th.css));
-    card.classList.add(t.css);
+    // Set badge theme class
+    Object.values(THEMES).forEach(th => pill.classList.remove(th.css));
+    pill.classList.add(t.css);
+    name.textContent = event.name;
 
-    // Flip slot to event state
-    document.querySelector('.card-main-slot').classList.add('ev-active');
-    evName.textContent  = t.icon + ' ' + event.name;
-    evBadge.textContent = t.label;
-
-    // Theme the glow to match event
-    const themeGlows = {
-      party:'#be185d', concert:'#6d28d9', camping:'#166534', dinner:'#991b1b', chill:'#1e3a5f'
-    };
-    const g = themeGlows[event.theme] || '#be185d';
-    document.documentElement.style.setProperty('--accent', g);
-    document.documentElement.style.setProperty('--glow', g);
-    document.documentElement.style.setProperty('--orb1', g);
-    document.documentElement.style.setProperty('--orb2', g + '88');
+    row.classList.add('visible');
+    document.getElementById('bellBtn').classList.add('has-event');
   }
 
   function clearEventFromCard() {
-    const card = document.getElementById('todayCard');
-    Object.values(THEMES).forEach(th => card.classList.remove(th.css));
-    document.querySelector('.card-main-slot').classList.remove('ev-active');
-    // Update bell indicator
+    document.getElementById('eventBadgeRow').classList.remove('visible');
     document.getElementById('bellBtn').classList.remove('has-event');
   }
 
@@ -1765,48 +1832,89 @@
   });
 
   // ── ADMIN PANEL ────────────────────────────────────────────────────────────
+  // ── ADMIN PANEL ────────────────────────────────────────────────────────────
+  let activeAdminTab = 'queue';
+
   function closeAdmin() {
     document.getElementById('adminPanel').classList.remove('open');
   }
 
   async function openAdminPanel() {
     document.getElementById('adminPanel').classList.add('open');
-    await loadAdminQueue();
+    switchAdminTab('queue');
   }
 
+  function switchAdminTab(tab) {
+    activeAdminTab = tab;
+    document.querySelectorAll('.admin-tab').forEach(t =>
+      t.classList.toggle('active', t.dataset.tab === tab));
+    document.getElementById('adminQueue').style.display  = tab === 'queue'  ? '' : 'none';
+    document.getElementById('adminEvents').style.display = tab === 'events' ? '' : 'none';
+    if (tab === 'queue')  loadAdminQueue();
+    if (tab === 'events') loadAdminEvents();
+  }
+
+  // ── SUBMISSIONS TAB ────────────────────────────────────────────────────────
   async function loadAdminQueue() {
-    if (!db) { return; }
+    if (!db) return;
     const { collection, getDocs, orderBy, query } = fbM;
     const queue = document.getElementById('adminQueue');
     queue.innerHTML = '<div class="admin-empty">Loading…</div>';
-
+    queue.style.width = '100%'; queue.style.maxWidth = '600px';
     try {
       const q    = query(collection(db, 'submissions'), orderBy('submitted', 'desc'));
       const snap = await getDocs(q);
-
       if (snap.empty) {
         queue.innerHTML = '<div class="admin-empty">No pending submissions</div>';
         return;
       }
-
       queue.innerHTML = '';
       snap.forEach(docSnap => {
         const s = docSnap.data();
         const t = THEMES[s.theme] || THEMES.party;
+
         const card = document.createElement('div');
         card.className = 'admin-card';
-        card.innerHTML = `
-          <div class="admin-card-date">${s.date}</div>
-          <div class="admin-card-name">${t.icon} ${s.name}</div>
-          <div class="admin-card-meta">
-            <span>Type: ${s.type}</span>
-            <span>Theme: ${t.label}</span>
-            <span>Submitted: ${s.submitted?.toDate?.()?.toLocaleDateString('en-CA') || '—'}</span>
-          </div>
-          <div class="admin-actions">
-            <button class="admin-btn approve" onclick="approveSubmission('${docSnap.id}', ${JSON.stringify(s).replace(/"/g,'&quot;')})">✓ Approve</button>
-            <button class="admin-btn reject"  onclick="rejectSubmission('${docSnap.id}')">✕ Reject</button>
-          </div>`;
+
+        const dateDiv = document.createElement('div');
+        dateDiv.className = 'admin-card-date';
+        dateDiv.textContent = s.date;
+        card.appendChild(dateDiv);
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'admin-card-name';
+        nameDiv.textContent = t.icon + ' ' + s.name;
+        card.appendChild(nameDiv);
+
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'admin-card-meta';
+        const submitted = s.submitted?.toDate?.()?.toLocaleDateString('en-CA') || '—';
+        metaDiv.innerHTML = '<span>Type: ' + s.type + '</span><span>Theme: ' + t.label + '</span><span>Submitted: ' + submitted + '</span>';
+        card.appendChild(metaDiv);
+
+        const actions = document.createElement('div');
+        actions.className = 'admin-actions';
+
+        const approveBtn = document.createElement('button');
+        approveBtn.className = 'admin-btn approve';
+        approveBtn.textContent = '✓ Approve';
+        approveBtn.dataset.id   = docSnap.id;
+        approveBtn.dataset.data = JSON.stringify(s);
+        approveBtn.addEventListener('click', function() {
+          approveSubmission(this.dataset.id, JSON.parse(this.dataset.data));
+        });
+        actions.appendChild(approveBtn);
+
+        const rejectBtn = document.createElement('button');
+        rejectBtn.className = 'admin-btn reject';
+        rejectBtn.textContent = '✕ Reject';
+        rejectBtn.dataset.id = docSnap.id;
+        rejectBtn.addEventListener('click', function() {
+          rejectSubmission(this.dataset.id);
+        });
+        actions.appendChild(rejectBtn);
+
+        card.appendChild(actions);
         queue.appendChild(card);
       });
     } catch(e) {
@@ -1815,12 +1923,9 @@
   }
 
   async function approveSubmission(id, data) {
-    const { doc, setDoc, deleteDoc, collection } = fbM;
+    const { doc, setDoc, deleteDoc } = fbM;
     try {
-      // Write to events collection keyed by date (one event per day enforced)
-      await setDoc(doc(db, 'events', data.date), {
-        name: data.name, type: data.type, theme: data.theme
-      });
+      await setDoc(doc(db, 'events', data.date), { name: data.name, type: data.type, theme: data.theme });
       await deleteDoc(doc(db, 'submissions', id));
       await loadApprovedEvents();
       loadAdminQueue();
@@ -1833,6 +1938,136 @@
       await deleteDoc(doc(db, 'submissions', id));
       loadAdminQueue();
     } catch(e) { alert('Error rejecting: ' + e.message); }
+  }
+
+  // ── EVENTS TAB ─────────────────────────────────────────────────────────────
+  async function loadAdminEvents() {
+    if (!db) return;
+    const { collection, getDocs } = fbM;
+    const container = document.getElementById('adminEvents');
+    container.innerHTML = '<div class="admin-empty">Loading…</div>';
+    try {
+      const snap = await getDocs(collection(db, 'events'));
+      if (snap.empty) {
+        container.innerHTML = '<div class="admin-empty">No approved events</div>';
+        return;
+      }
+
+      const today = new Date(); today.setHours(0,0,0,0);
+      const entries = [];
+      snap.forEach(d => entries.push({ id: d.id, ...d.data() }));
+      entries.sort((a, b) => {
+        const da = new Date(a.id), db2 = new Date(b.id);
+        const aFut = da >= today, bFut = db2 >= today;
+        if (aFut && bFut)   return da - db2;
+        if (!aFut && !bFut) return db2 - da;
+        return aFut ? -1 : 1;
+      });
+
+      container.innerHTML = '';
+      entries.forEach(ev => {
+        const t      = THEMES[ev.theme] || THEMES.party;
+        const evDate = new Date(ev.id + 'T12:00:00');
+        const isPast = evDate < today;
+
+        const card = document.createElement('div');
+        card.className = 'admin-card' + (isPast ? ' admin-badge-past' : '');
+
+        if (isPast) {
+          const pastLbl = document.createElement('div');
+          pastLbl.className = 'admin-card-past-label';
+          pastLbl.textContent = 'Past event';
+          card.appendChild(pastLbl);
+        }
+
+        const dateDiv = document.createElement('div');
+        dateDiv.className = 'admin-card-date';
+        dateDiv.textContent = ev.id;
+        card.appendChild(dateDiv);
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'admin-card-name';
+        nameDiv.textContent = t.icon + ' ' + ev.name;
+        card.appendChild(nameDiv);
+
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'admin-card-meta';
+        metaDiv.innerHTML = '<span>Type: ' + ev.type + '</span><span>Theme: ' + t.label + '</span>';
+        card.appendChild(metaDiv);
+
+        const actions = document.createElement('div');
+        actions.className = 'admin-actions';
+
+        if (!isPast) {
+          const editBtn = document.createElement('button');
+          editBtn.className = 'admin-btn edit';
+          editBtn.textContent = '✎ Edit';
+          // Use data attributes — no quoting issues
+          editBtn.dataset.id    = ev.id;
+          editBtn.dataset.name  = ev.name;
+          editBtn.dataset.type  = ev.type;
+          editBtn.dataset.theme = ev.theme;
+          editBtn.addEventListener('click', function() {
+            openEditEvent(this.dataset.id, this.dataset.name, this.dataset.type, this.dataset.theme);
+          });
+          actions.appendChild(editBtn);
+        }
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'admin-btn delete';
+        delBtn.textContent = '✕ Delete';
+        delBtn.dataset.id = ev.id;
+        delBtn.addEventListener('click', function() {
+          deleteEvent(this.dataset.id);
+        });
+        actions.appendChild(delBtn);
+
+        card.appendChild(actions);
+        container.appendChild(card);
+      });
+    } catch(e) {
+      container.innerHTML = '<div class="admin-empty">Error: ' + e.message + '</div>';
+    }
+  }
+
+  function openEditEvent(id, name, type, theme) {
+    document.getElementById('editEventId').value  = id;
+    document.getElementById('editEvName').value   = name;
+    selectOptByVal('editTypeScroll',  type);
+    selectOptByVal('editThemeScroll', theme);
+    document.getElementById('editFormStatus').textContent = '';
+    document.getElementById('editFormStatus').className  = 'form-status';
+    openModal('adminEditModal');
+  }
+
+  async function saveEditedEvent() {
+    const id    = document.getElementById('editEventId').value;
+    const name  = document.getElementById('editEvName').value.trim();
+    const type  = getSelected('editTypeScroll');
+    const theme = getSelected('editThemeScroll');
+    if (!name) { document.getElementById('editFormStatus').textContent = 'Name required'; return; }
+    const { doc, setDoc } = fbM;
+    try {
+      await setDoc(doc(db, 'events', id), { name, type, theme });
+      await loadApprovedEvents();
+      closeModal('adminEditModal');
+      loadAdminEvents();
+    } catch(e) {
+      document.getElementById('editFormStatus').textContent = 'Error: ' + e.message;
+      document.getElementById('editFormStatus').className = 'form-status err';
+    }
+  }
+
+  async function deleteEvent(id) {
+    const { doc, deleteDoc } = fbM;
+    try {
+      await deleteDoc(doc(db, 'events', id));
+      await loadApprovedEvents();
+      loadAdminEvents();
+      // Refresh card in case deleted event was showing
+      const date = viewingDate || new Date();
+      checkAndApplyEvent(date);
+    } catch(e) { alert('Error deleting: ' + e.message); }
   }
 
   // ── INIT ─────────────────────────────────────────────────────────────────
